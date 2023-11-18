@@ -145,9 +145,16 @@ class QuizCategoryView(APIView):
             else:
                 category.title = data['title']
             category.save()
-            return Response({'id': category.id, 'message': 'Category created successfully'}, status=201)
+            data = {
+                "category_id": category.id,
+                "message" : 'Category created successfully',
+            }
+            return Response({'data': data}, status=201)
         except Exception as e:
-            return Response({'error': str(e)}, status=400)
+            data = {
+                "message" : str(e),
+            }
+            return Response({'data': data}, status=400)
 
 
 class QuiView(APIView):
@@ -157,49 +164,61 @@ class QuiView(APIView):
             quiz_data = Quiz.objects.filter(category = category_id,is_active=True)
             serializer = QuizSerializer(quiz_data, many=True)
             if quiz_data:
-                return Response({"data": serializer.data}, status=status.HTTP_200_OK)
+                data = {'data': serializer.data, 'message': 'Categories fetched successfully!'}
+                return Response({"data": data}, status=status.HTTP_200_OK)
             else:
-                return Response({"data": []}, status=status.HTTP_204_NO_CONTENT)
+                data = {'data': [], 'message': 'Data not found!'}
+                return Response({"data": data}, status=status.HTTP_204_NO_CONTENT)
         except Exception as e:
-            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            data = {'data': [], 'message': 'str(e)'}
+            return Response({'data': data}, status=status.HTTP_400_BAD_REQUEST)
     
     def post(self, request):
         data = request.data
         if not data:
-            return Response({'error': "Missing Payload!"}, status=204)
+            data = {'data': [], 'message': 'Data not found!'}
+            return Response({'data':data}, status=204)
         try:
             check_quiz = Quiz.objects.filter(name = data['name'], category_id = data['category_id'])
             if check_quiz:
-                return Response({'error': f"Quiz Name : {data['name']} already exists!"}, status=409)
+                data = {'data': [], 'message': f"Quiz Name : {data['name']} already exists!"}
+                return Response({'data': data}, status=409)
             
             quiz        = Quiz()
             quiz.category = Category.objects.get(id = data['category_id'])
             if data['name'] == "" or data['name'] == None or data['name'] == type(int):
-                return Response({'error': "Quiz name cannot have the following : Empty string, Null and Integer value!"}, status=400)
+                data = {'data': [], 'message': "Quiz name cannot have the following : Empty string, Null and Integer value!"}
+                return Response({'data': data}, status=400)
             else:
                 quiz.name = data['name']
             if data['title'] == "" or data['title'] == None or data['title'] == type(int):
-                return Response({'error': "Quiz title cannot have the following : Empty string, Null and Integer value!"}, status=400)
+                data = {'data': [], 'message': "Quiz title cannot have the following : Empty string, Null and Integer value!"}
+                return Response({'data': data}, status=400)
             else:
                 quiz.title = data['title']
             if data['total_mark'] == "" or data['total_mark'] == None or data['total_mark'] == type(str):
-                return Response({'error': "Quiz total_mark cannot have the following : Empty string, Null and String value!"}, status=400)
+                data = {'data': [], 'message': "Quiz total_mark cannot have the following : Empty string, Null and String value!"}
+                return Response({'data': data}, status=400)
             else:
                 quiz.total_mark = data['total_mark']
             if data['quiz_time'] == "" or data['quiz_time'] == None or data['quiz_time'] == type(str):
-                return Response({'error': "Quiz quiz_time cannot have the following : Empty string, Null and String value!"}, status=400)
+                data = {'data': [], 'message': "Quiz quiz_time cannot have the following : Empty string, Null and String value!"}
+                return Response({'data': data}, status=400)
             else:
                 quiz.quiz_time = data['quiz_time']
             quiz.save()
-            return Response({'id': quiz.id, 'message': 'Quiz created successfully'}, status=201)
+            data = {'data': [], 'message': 'Quiz created successfully'}
+            return Response({'data': data}, status=201)
         except Exception as e:
-            return Response({'error': str(e)}, status=400)
+            data = {'data': [], 'message': 'str(e)'}
+            return Response({'data': data}, status=status.HTTP_400_BAD_REQUEST)
 
     def put(self, request, quiz_id):
         print(quiz_id)
         data = request.data
         if not data:
-            return Response({'error': "Missing Payload!"}, status=status.HTTP_204_NO_CONTENT)
+            data = {'data': [], 'message': "Missing Payload!"}
+            return Response({'data': data}, status=status.HTTP_204_NO_CONTENT)
 
         try:
             quiz = Quiz.objects.get(id=quiz_id)
@@ -221,12 +240,14 @@ class QuiView(APIView):
                 quiz.quiz_time = data['quiz_time']
 
             quiz.save()
-
-            return Response({'message': 'Quiz updated successfully'}, status=status.HTTP_200_OK)
+            data = {'data': [], 'message': 'Quiz updated successfully'}
+            return Response({'data': data}, status=status.HTTP_200_OK)
         except Quiz.DoesNotExist:
-            return Response({'error': 'Quiz not found'}, status=status.HTTP_404_NOT_FOUND)
+            data = {'data': [], 'message': 'Quiz not found'}
+            return Response({'data': data}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
-            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            data = {'data': [], 'message': 'Quiz not found'}
+            return Response({'data': data}, status=status.HTTP_400_BAD_REQUEST)
 
 
 
