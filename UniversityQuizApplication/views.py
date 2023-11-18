@@ -1,5 +1,4 @@
 from django.shortcuts import render
-
 from django.contrib.auth import logout
 from rest_framework import status
 from rest_framework.response import Response
@@ -119,7 +118,6 @@ class QuizCategoryView(APIView):
         try:
             category_data = Category.objects.filter(is_active=True)
             serializer = CategorySerializer(category_data, many=True)
-
             if category_data:
                 return Response({"data": serializer.data}, status=status.HTTP_200_OK)
             else:
@@ -136,7 +134,8 @@ class QuizCategoryView(APIView):
             if check_category:
                 return Response({'error': f"Category Name : {data['name']} already exists!"}, status=409)
             
-            category = Category()
+            category        = Category()
+            category.user   = User.objects.get(id=request.user.id)
             if data['name'] == "" or data['name'] == None or data['name'] == type(int):
                 return Response({'error': "Catogory name cannot have the following : Empty string, Null and Integer value!"}, status=400)
             else:
@@ -150,3 +149,127 @@ class QuizCategoryView(APIView):
         except Exception as e:
             return Response({'error': str(e)}, status=400)
 
+
+class QuiView(APIView):
+    permission_classes = (permissions.IsAuthenticated,)
+    def get(self,request, category_id):
+        try:
+            quiz_data = Quiz.objects.filter(category = category_id,is_active=True)
+            serializer = QuizSerializer(quiz_data, many=True)
+            if quiz_data:
+                return Response({"data": serializer.data}, status=status.HTTP_200_OK)
+            else:
+                return Response({"data": []}, status=status.HTTP_204_NO_CONTENT)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+    
+    def post(self, request):
+        data = request.data
+        if not data:
+            return Response({'error': "Missing Payload!"}, status=204)
+        try:
+            check_quiz = Quiz.objects.filter(name = data['name'], category_id = data['category_id'])
+            if check_quiz:
+                return Response({'error': f"Quiz Name : {data['name']} already exists!"}, status=409)
+            
+            quiz        = Quiz()
+            quiz.category = Category.objects.get(id = data['category_id'])
+            if data['name'] == "" or data['name'] == None or data['name'] == type(int):
+                return Response({'error': "Quiz name cannot have the following : Empty string, Null and Integer value!"}, status=400)
+            else:
+                quiz.name = data['name']
+            if data['title'] == "" or data['title'] == None or data['title'] == type(int):
+                return Response({'error': "Quiz title cannot have the following : Empty string, Null and Integer value!"}, status=400)
+            else:
+                quiz.title = data['title']
+            if data['total_mark'] == "" or data['total_mark'] == None or data['total_mark'] == type(str):
+                return Response({'error': "Quiz total_mark cannot have the following : Empty string, Null and String value!"}, status=400)
+            else:
+                quiz.total_mark = data['total_mark']
+            if data['quiz_time'] == "" or data['quiz_time'] == None or data['quiz_time'] == type(str):
+                return Response({'error': "Quiz quiz_time cannot have the following : Empty string, Null and String value!"}, status=400)
+            else:
+                quiz.quiz_time = data['quiz_time']
+            quiz.save()
+            return Response({'id': quiz.id, 'message': 'Quiz created successfully'}, status=201)
+        except Exception as e:
+            return Response({'error': str(e)}, status=400)
+
+    def put(self, request, quiz_id):
+        print(quiz_id)
+        data = request.data
+        if not data:
+            return Response({'error': "Missing Payload!"}, status=status.HTTP_204_NO_CONTENT)
+
+        try:
+            quiz = Quiz.objects.get(id=quiz_id)
+
+            # Update the quiz fields if provided in the request data
+            if 'category_id' in data:
+                quiz.category = Category.objects.get(id = data['category_id'])
+
+            if 'name' in data:
+                quiz.name = data['name']
+
+            if 'title' in data:
+                quiz.title = data['title']
+
+            if 'total_mark' in data:
+                quiz.total_mark = data['total_mark']
+
+            if 'quiz_time' in data:
+                quiz.quiz_time = data['quiz_time']
+
+            quiz.save()
+
+            return Response({'message': 'Quiz updated successfully'}, status=status.HTTP_200_OK)
+        except Quiz.DoesNotExist:
+            return Response({'error': 'Quiz not found'}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+
+class QuizQuestionsView(APIView):
+    permission_classes = (permissions.IsAuthenticated,)
+    def get(self,request, quiz_id):
+        try:
+            quiz_questions = QuizQuestion.objects.filter(quiz=quiz_id,is_active=True)
+            serializer = QuizQuestionSerializer(quiz_questions, many=True)
+            if quiz_questions:
+                return Response({"data": serializer.data}, status=status.HTTP_200_OK)
+            else:
+                return Response({"data": []}, status=status.HTTP_204_NO_CONTENT)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+    
+    def post(self, request, quiz_id):
+        data = request.data
+        if not data:
+            return Response({'error': "Missing Payload!"}, status=204)
+        try:
+            check_quiz = QuizQuestion.objects.filter(quiz = data['quiz_id'])
+            if check_quiz:
+                return Response({'error': f"Quiz Name : {data['name']} already exists!"}, status=409)
+            quiz_question        = QuizQuestion()
+            quiz_question.category = Category.objects.get(id = data['category_id'])
+            if data['name'] == "" or data['name'] == None or data['name'] == type(int):
+                return Response({'error': "Quiz name cannot have the following : Empty string, Null and Integer value!"}, status=400)
+            else:
+                quiz_question.name = data['name']
+            if data['title'] == "" or data['title'] == None or data['title'] == type(int):
+                return Response({'error': "Quiz title cannot have the following : Empty string, Null and Integer value!"}, status=400)
+            else:
+                quiz_question.title = data['title']
+            if data['total_mark'] == "" or data['total_mark'] == None or data['total_mark'] == type(str):
+                return Response({'error': "Quiz total_mark cannot have the following : Empty string, Null and String value!"}, status=400)
+            else:
+                quiz_question.total_mark = data['total_mark']
+            if data['quiz_time'] == "" or data['quiz_time'] == None or data['quiz_time'] == type(str):
+                return Response({'error': "Quiz quiz_time cannot have the following : Empty string, Null and String value!"}, status=400)
+            else:
+                quiz_question.quiz_time = data['quiz_time']
+            quiz_question.save()
+            return Response({'id': quiz_question.id, 'message': 'Quiz Questions created successfully'}, status=201)
+        except Exception as e:
+            return Response({'error': str(e)}, status=400)

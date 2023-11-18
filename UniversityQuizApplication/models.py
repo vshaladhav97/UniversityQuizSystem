@@ -64,6 +64,7 @@ class AutorizeMailerDomain(models.Model):
 
 # Category Model
 class Category(models.Model):
+    user               = models.ForeignKey(User, on_delete=models.CASCADE, default=1)
     name               = models.CharField(max_length=255)
     title              = models.CharField(max_length=255)
     is_active          = models.BooleanField(default=True)
@@ -80,7 +81,7 @@ class Quiz(models.Model):
     title                             = models.CharField(max_length=255)
     total_mark                        = models.IntegerField(default=0, null=True, blank=True)
     no_of_questions                   = models.PositiveBigIntegerField(default=0)
-    quiz_time                         = models.TimeField(blank=True,null=True)
+    quiz_time                         = models.PositiveIntegerField(default=10)
     is_active                         = models.BooleanField(default=True)
     createdDate                       = models.DateTimeField(auto_now_add=True)
     modifiedDate                      = models.DateTimeField(auto_now=True)

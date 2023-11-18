@@ -8,6 +8,9 @@ urlpatterns = [
     path('login/', UserLogin.as_view(), name='user-login'),
     path('logout/', LogoutView.as_view(), name='logout'),
     path('user_profile/<int:user_id>', UserProfileView.as_view(), name="user_profile"),
-    path('category/', QuizCategoryView.as_view(), name="category")
-    # Add more URL patterns for login, profile, etc.
+    path('category/', QuizCategoryView.as_view(), name="category"),
+    path('quiz/', QuiView.as_view(), name="quiz"),
+    path('quizzes/<int:quiz_id>/', QuiView.as_view(), name='quiz-detail'),
+    path('quiz_question/<int:quiz_id>/', QuizQuestionsView.as_view(), name="quiz_question")
+
 ]

@@ -44,9 +44,11 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt',
     'UniversityQuizApplication',
     'rest_framework_simplejwt.token_blacklist',
+    'corsheaders',
 ]
 
 MIDDLEWARE = [
+    
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -54,9 +56,17 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "corsheaders.middleware.CorsMiddleware",
     # "rest_framework_simplejwt.middleware.TokenBlacklistMiddleware",
 ]
 
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000",  # Replace with the actual origin of your React app
+]
+# Allow credentials (cookies, authentication headers)
+CORS_ALLOW_CREDENTIALS = True
+
+# CORS_ORIGIN_WHITELIST = ('http://localhost:3000')
 ROOT_URLCONF = "UniversityQuizSystem.urls"
 
 TEMPLATES = [
@@ -76,7 +86,7 @@ TEMPLATES = [
 ]
 
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=5),  # Adjust the token lifetime as needed
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=30),  # Adjust the token lifetime as needed
     "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
     'TOKEN_BLACKLIST_AFTER_ROTATION': True,
     'ROTATE_REFRESH_TOKENS': False,

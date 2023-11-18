@@ -1,29 +1,7 @@
-# from rest_framework import serializers
-# from .models import User
-
-# class UserSerializer(serializers.ModelSerializer):
-#     class Meta:
-#         model = User
-#         fields = ['id', 'email', 'password', 'first_name', 'last_name']
-#         extra_kwargs = {
-#             'password': {'write_only': True}
-#         }
-
-#     def create(self, validated_data):
-#         user = User.objects.create(
-#             email=validated_data['email'],
-#             first_name=validated_data['first_name'],
-#             last_name=validated_data['last_name']
-#         )
-#         user.set_password(validated_data['password'])  # Hash the password
-#         user.save()
-#         return user
-
-
 from rest_framework import serializers
 from .models import *
-from rest_framework_simplejwt.tokens import RefreshToken
-from rest_framework_simplejwt.exceptions import TokenError
+# from rest_framework_simplejwt.tokens import RefreshToken
+# from rest_framework_simplejwt.exceptions import TokenError
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -59,4 +37,15 @@ class UserProfileSerializer(serializers.ModelSerializer):
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = Category
+        fields = '__all__'
+
+class QuizSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Quiz
+        fields = '__all__'
+
+class QuizQuestionSerializer(serializers.ModelSerializer):
+    quiz_question_quiz = QuizSerializer(many=True, read_only=True)
+    class Meta:
+        model = QuizQuestion
         fields = '__all__'
