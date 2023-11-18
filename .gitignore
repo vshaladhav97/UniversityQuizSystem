@@ -41,5 +41,5 @@ static/
 media/*
 media/*/*
 celerybeat-schedule.db
-
+**/migrations/
 db.sqlite3
