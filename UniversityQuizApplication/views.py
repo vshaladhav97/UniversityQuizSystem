@@ -11,6 +11,7 @@ from .serializers import *
 from .utils import *
 from django.contrib.auth import get_user_model
 from rest_framework import permissions, generics,status
+from django.db import transaction
 User = get_user_model() 
 
 # User Registration View
@@ -219,10 +220,8 @@ class QuiView(APIView):
         if not data:
             data = {'data': [], 'message': "Missing Payload!"}
             return Response({'data': data}, status=status.HTTP_200_OK)
-
         try:
             quiz = Quiz.objects.get(id=quiz_id)
-
             # Update the quiz fields if provided in the request data
             if 'category_id' in data:
                 quiz.category = Category.objects.get(id = data['category_id'])
@@ -249,13 +248,11 @@ class QuiView(APIView):
             data = {'data': [], 'message': str(e)}
             return Response({'data': data}, status=status.HTTP_400_BAD_REQUEST)
 
-
-
 class QuizQuestionsView(APIView):
     permission_classes = (permissions.IsAuthenticated,)
-    def get(self,request, quiz_id):
+    def get(self,request, quest_id):
         try:
-            quiz_questions = QuizQuestion.objects.filter(quiz=quiz_id,is_active=True)
+            quiz_questions = QuizQuestion.objects.filter(id=quest_id,is_active=True)
             serializer = QuizQuestionSerializer(quiz_questions, many=True)
             if quiz_questions:
                 data = {'data': serializer.data, 'message': 'Quiz Fetched Successfully!'}
@@ -267,41 +264,73 @@ class QuizQuestionsView(APIView):
             data = {'data': [], 'message': str(e)}
             return Response({'data':data}, status=status.HTTP_400_BAD_REQUEST)
     
-    def post(self, request, quiz_id):
+    @transaction.atomic
+    def post(self, request):
         data = request.data
         if not data:
             data = {'data': [], 'message': "Missing Payload!"}
             return Response({'data': data}, status=status.HTTP_200_OK)
+        
         try:
-            check_quiz = QuizQuestion.objects.filter(quiz = data['quiz_id'])
-            if check_quiz:
-                data = {'data': [], 'message': f"Quiz Name : {data['name']} already exists!"}
+            check_quiz = Quiz.objects.filter(id=data['quiz_id'])
+            if not check_quiz:
+                data = {'data': [], 'message': f"Quiz id : {data['quiz_id']} does not exist in the Database!"}
                 return Response({'data': data}, status=409)
-            quiz_question        = QuizQuestion()
-            quiz_question.category = Category.objects.get(id = data['category_id'])
-            if data['name'] == "" or data['name'] == None or data['name'] == type(int):
-                data = {'data': [], 'message': "Quiz name cannot have the following : Empty string, Null and Integer value!"}
+
+            quiz_question = QuizQuestion()
+            quiz_question.quiz = check_quiz.first()
+
+            if not data['question']:
+                data = {'data': [], 'message': "Question cannot be empty!"}
                 return Response({'data': data}, status=400)
             else:
-                quiz_question.name = data['name']
-            if data['title'] == "" or data['title'] == None or data['title'] == type(int):
-                data = {'data': [], 'message': "Quiz title cannot have the following : Empty string, Null and Integer value!"}
+                quiz_question.question = data['question']
+
+            if not isinstance(data['questions_marks'], int):
+                data = {'data': [], 'message': "Question marks must be an integer!"}
                 return Response({'data': data}, status=400)
             else:
-                quiz_question.title = data['title']
-            if data['total_mark'] == "" or data['total_mark'] == None or data['total_mark'] == type(str):
-                data = {'data': [], 'message': "Quiz total_mark cannot have the following : Empty string, Null and String value!"}
+                quiz_question.questions_marks = data['questions_marks']
+
+            if not data['quiz_type']:
+                data = {'data': [], 'message': "Quiz type cannot be empty!"}
                 return Response({'data': data}, status=400)
             else:
-                quiz_question.total_mark = data['total_mark']
-            if data['quiz_time'] == "" or data['quiz_time'] == None or data['quiz_time'] == type(str):
-                data = {'data': [], 'message': "Quiz total_mark cannot have the following : Empty string, Null and String value!"}
-                return Response({'data': "Quiz total_mark cannot have the following : Empty string, Null and String value!"}, status=400)
-            else:
-                quiz_question.quiz_time = data['quiz_time']
+                quiz_question.quiz_type = data['quiz_type']
+
             quiz_question.save()
-            data = {'data': [{'id':quiz_question.id,}], 'message':'Quiz Questions created successfully'}
-            return Response({'data': data}, status=201)
+
+            # Options data code
+            options_data = data.get('options', [])
+            
+            for i in options_data:
+                quiz_option                 = QuizOptionsCreator()
+                quiz_option.quiz_question   = quiz_question
+                quiz_option.option          = i['option']
+                quiz_option.correct_flag    = i['correct_flag']
+                quiz_option.save() 
+
+             # Return a success response
+            data = {'data': [{'id':  f"Question id : {quiz_question.id} Quiz Questions created successfully!"}], 'message': 'Quiz Questions created successfully'}
+            return Response({'data': data}, status=status.HTTP_201_CREATED) 
+
         except Exception as e:
-            data = {'data': [], 'message':str(e)}
+            data = {'data': [], 'message': str(e)}
             return Response({'data': data}, status=400)
+
+class QuizAllDataView(APIView):
+
+    def get(self,request, quiz_id):
+        try:
+            quiz_questions = Quiz.objects.filter(id=quiz_id,is_active=True)
+            serializer = QuizSerializer(quiz_questions, many=True)
+            if quiz_questions:
+                data = {'data': serializer.data, 'message': 'Quiz Fetched Successfully!'}
+                return Response({"data": data}, status=status.HTTP_200_OK)
+            else:
+                data = {'data': [], 'message': 'Quiz Not Found!'}
+                return Response({"data": data}, status=status.HTTP_200_OK)
+        except Exception as e:
+            data = {'data': [], 'message': str(e)}
+            return Response({'data':data}, status=status.HTTP_400_BAD_REQUEST)
+    

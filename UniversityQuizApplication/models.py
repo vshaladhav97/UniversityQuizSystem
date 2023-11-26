@@ -100,7 +100,6 @@ class QuizQuestion(models.Model):
     ]
     quiz                = models.ForeignKey(Quiz, related_name='quiz_question_quiz', on_delete=models.CASCADE)
     question            = models.TextField(max_length=1000, null=True, blank=True)
-    correct_answer      = models.TextField(max_length=1000, null=True, blank=True)
     questions_marks     = models.CharField(max_length=255, null=True, blank=True)
     images              = models.ImageField(upload_to='quiz_question/images/', null=True, blank=True)
     audio_tracks        = models.FileField(upload_to='quiz_question/audio_tracks/',null=True, blank=True)
