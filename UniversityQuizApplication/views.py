@@ -335,3 +335,19 @@ class QuizAllDataView(APIView):
             data = {'data': [], 'message': str(e)}
             return Response({'data':data}, status=status.HTTP_400_BAD_REQUEST)
     
+class StudentQuizDataView(APIView):
+    permission_classes = (permissions.IsAuthenticated,)
+    def get(self,request, quiz_id):
+        try:
+            quiz_questions = Quiz.objects.filter(id=quiz_id,is_active=True)
+            serializer = QuizStudentSerializer(quiz_questions, many=True)
+            if quiz_questions:
+                data = {'data': serializer.data, 'message': 'Quiz Fetched Successfully!'}
+                return Response({"data": data}, status=status.HTTP_200_OK)
+            else:
+                data = {'data': [], 'message': 'Quiz Not Found!'}
+                return Response({"data": data}, status=status.HTTP_200_OK)
+        except Exception as e:
+            data = {'data': [], 'message': str(e)}
+            return Response({'data':data}, status=status.HTTP_400_BAD_REQUEST)
+        

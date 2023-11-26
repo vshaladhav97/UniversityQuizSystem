@@ -39,11 +39,15 @@ class CategorySerializer(serializers.ModelSerializer):
         model = Category
         fields = '__all__'
 
+
+
+# For Examiner
 class QuizOptionsCreatorSerializer(serializers.ModelSerializer):
     class Meta:
         model = QuizOptionsCreator
         fields = '__all__'
 
+# For Examiner
 class QuizQuestionSerializer(serializers.ModelSerializer):
     quiz_question_option = QuizOptionsCreatorSerializer(many=True, read_only=True)
 
@@ -51,6 +55,7 @@ class QuizQuestionSerializer(serializers.ModelSerializer):
         model = QuizQuestion
         fields = '__all__'
 
+# For Examiner
 class QuizSerializer(serializers.ModelSerializer):
     quiz_question_quiz = QuizQuestionSerializer(many=True, read_only=True)
 
@@ -58,4 +63,25 @@ class QuizSerializer(serializers.ModelSerializer):
         model = Quiz
         fields = '__all__'
 
+# For Student
+class QuizOptionsCreatorStudentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = QuizOptionsCreator
+        fields = ['id', 'quiz_question', 'option'] 
+
+# For Student
+class QuizQuestionStudentSerializer(serializers.ModelSerializer):
+    quiz_question_option = QuizOptionsCreatorStudentSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = QuizQuestion
+        fields = '__all__'
+
+# For Student
+class QuizStudentSerializer(serializers.ModelSerializer):
+    quiz_question_quiz = QuizQuestionStudentSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Quiz
+        fields = '__all__'
 
