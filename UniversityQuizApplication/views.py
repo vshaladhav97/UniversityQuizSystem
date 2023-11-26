@@ -56,7 +56,8 @@ class UserLogin(APIView):
                         {   
                             'result': "User Login Successfully",
                             'access': str(refresh.access_token),
-                            'refresh': str(refresh)
+                            'refresh': str(refresh),
+                            'is_examinee': True if user.role == "Examinee" else False
                         },
                         status=status.HTTP_200_OK
                     )
