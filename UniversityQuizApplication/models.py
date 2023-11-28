@@ -97,6 +97,8 @@ class QuizQuestion(models.Model):
         ('video','VIDEO'),
         ('image','IMAGE'),
         ('write','WRITE'),
+        ('multi_select', 'MULTI_SELECT'),
+        ('multi_choice', 'MULTI_CHOICE')
     ]
     quiz                = models.ForeignKey(Quiz, related_name='quiz_question_quiz', on_delete=models.CASCADE)
     question            = models.TextField(max_length=1000, null=True, blank=True)
@@ -135,9 +137,10 @@ class QuizOptionsCreator(models.Model):
 class QuizResult(models.Model):
     quiz_id        = models.ForeignKey(Quiz,on_delete=models.PROTECT, related_name='quiz_quiz_result')
     user_id        = models.ForeignKey(User, on_delete=models.PROTECT, related_name='quiz_user_quiz_result')
-    quiz_option    = models.ForeignKey(QuizOptionsCreator, on_delete=models.PROTECT, null=True, blank=True, related_name='quiz_user_quiz_result')
+    quiz_option    = models.ManyToManyField(QuizOptionsCreator, blank=True, related_name='quiz_user_quiz_result')
     own_answer     = models.TextField(max_length=1000,null=True, blank=True)
     marks_get      = models.DecimalField(max_digits=5, decimal_places=2, blank=True, null=True)
+    question_marks = models.DecimalField(max_digits=5, decimal_places=2, blank=True, null=True)
     is_attempted   = models.BooleanField(default=False)
     is_ans_correct = models.BooleanField(default=False)
     created_date   = models.DateTimeField(auto_now_add=True, null=True, blank=True)
@@ -148,7 +151,7 @@ class QuizResult(models.Model):
 
 # Quiz-User Result Model
 class QuizUserResult(models.Model):
-    quiz_result_id       = models.ForeignKey(QuizResult,on_delete=models.PROTECT, related_name='quiz_quiz_user_rel')
+    quiz_result_id       = models.ForeignKey(Quiz,on_delete=models.PROTECT, related_name='quiz_quiz_user_rel')
     user_id              = models.ForeignKey(User, on_delete=models.PROTECT, related_name='user_quiz_user_rel')
     total_marks          = models.DecimalField(max_digits=5, decimal_places=2, blank=True, null=True)
     is_submit            = models.BooleanField(default=False)

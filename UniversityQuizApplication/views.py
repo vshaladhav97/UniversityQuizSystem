@@ -12,6 +12,8 @@ from .utils import *
 from django.contrib.auth import get_user_model
 from rest_framework import permissions, generics,status
 from django.db import transaction
+from django.core.exceptions import ObjectDoesNotExist
+from django.db.models import Sum, Avg, Max, Min
 User = get_user_model() 
 
 # User Registration View
@@ -350,4 +352,147 @@ class StudentQuizDataView(APIView):
         except Exception as e:
             data = {'data': [], 'message': str(e)}
             return Response({'data':data}, status=status.HTTP_400_BAD_REQUEST)
+    
+    @transaction.atomic
+    def post(self, request):
+        jason_data = request.data
+        quiz_id = jason_data['quiz_id']
+        user_id = request.user.id
+        auto_submit = jason_data['auto_submit']
+        if not len(jason_data['questions'])>0:
+            data = {'data': [], 'message': 'user should submit some questions!'}
+            return Response({"data": data}, status=status.HTTP_200_OK) 
         
+        for data in jason_data['questions']:
+            
+            if data['type'] == "multi_choice":
+                try:
+                    quiz_question = QuizOptionsCreator.objects.get(id=data['option_id'], quiz_question=data['question_id'])
+                except ObjectDoesNotExist:
+                    # Handle the case where the object is not found
+                    error_message = f"Object with option id: ={data['option_id']} and question id: ={data['question_id']} does not exist."
+                    data = {'data': [], 'message': error_message}
+                    return Response({"data": data}, status=status.HTTP_200_OK)
+            
+                question_marks      = quiz_question.quiz_question.questions_marks
+                option_correct_flag = quiz_question.correct_flag
+                user_get_marks      = question_marks if option_correct_flag is True else 0
+            elif data['type'] == "multi_select":
+                correct_options_count = QuizOptionsCreator.objects.filter(quiz_question_id=data['question_id'], correct_flag=True).count()
+                print(correct_options_count, "correct_count")
+                correct_op_count = 0
+                for op_id in data['option_id']:
+                    try:
+                        quiz_question = QuizOptionsCreator.objects.get(id=op_id, quiz_question=data['question_id'])
+                    except ObjectDoesNotExist:
+                        # Handle the case where the object is not found
+                        error_message = f"Object with option id: ={data['option_id']} and question id: ={data['question_id']} does not exist."
+                        data = {'data': [], 'message': error_message}
+                        return Response({"data": data}, status=status.HTTP_200_OK)
+                    
+                    option_correct_flag = quiz_question.correct_flag
+                    correct_op_count += 1 if option_correct_flag is True else 0
+                
+                
+                question_marks      = quiz_question.quiz_question.questions_marks
+                print(correct_op_count, type(correct_op_count))
+                print(correct_options_count, type(correct_options_count))
+                print(question_marks, type(question_marks))
+                if correct_options_count != 0:
+                    calculate_marks = correct_op_count / correct_options_count * int(question_marks)
+                    user_get_marks = calculate_marks
+                else:
+                    user_get_marks = 0 
+                print(calculate_marks)
+                                    
+            
+            # if data['type'] == "multi_select":
+            #     for op_id in data['option_id']:
+            #         question_marks      = quiz_question.quiz_question.questions_marks
+            #         option_correct_flag = quiz_question.correct_flag
+            #         user_get_marks      = question_marks if option_correct_flag is True else 0
+            # else:
+    
+
+            quiz_result                 = QuizResult()
+            quiz_result.quiz_id         = Quiz.objects.get(id = quiz_id)
+            quiz_result.user_id         = User.objects.get(id = user_id)
+            # quiz_result.quiz_option     = QuizOptionsCreator.objects.get(id = data['option_id'])
+            quiz_result.own_answer      = ""
+            quiz_result.marks_get       = user_get_marks
+            quiz_result.question_marks  = question_marks
+            quiz_result.is_attempted    = data['is_attempted']
+            quiz_result.is_ans_correct  = True if option_correct_flag is True else False
+            quiz_result.save()
+            option_ids = data['option_id']
+            if data['type'] == "multi_select":
+                quiz_options_queryset = QuizOptionsCreator.objects.filter(id__in=option_ids)
+            else:
+                quiz_options_queryset = QuizOptionsCreator.objects.filter(id=option_ids)
+
+            # Assign the queryset to the quiz_options field
+            quiz_result.quiz_option.set(quiz_options_queryset)
+
+            # Save the related models
+            quiz_result.quiz_id.save()
+            quiz_result.user_id.save()
+
+            
+
+        check_total_marks_user_get        = QuizResult.objects.filter(user_id=user_id, quiz_id=quiz_id).aggregate(Sum('marks_get'))['marks_get__sum']
+        total_questions_marks             = QuizResult.objects.filter(user_id=user_id, quiz_id=quiz_id).aggregate(Sum('question_marks'))['question_marks__sum']
+        print(check_total_marks_user_get / total_questions_marks)
+        total_marks_user_get        = check_total_marks_user_get / total_questions_marks * 100 if total_questions_marks > 0 else 0
+        
+        user_result                 = QuizUserResult()
+        user_result.quiz_result_id  = Quiz.objects.get(id = quiz_id)
+        user_result.user_id         = User.objects.get(id = user_id)
+        user_result.total_marks     = total_marks_user_get
+        user_result.is_submit       = auto_submit
+        user_result.save()
+
+        data = {'data': [{"user_id":user_id, "marks_get":  total_marks_user_get, "total_questions": total_questions_marks}], 'message': 'Quiz Submitted Successfully!'}
+        return Response({"data": data}, status=status.HTTP_200_OK) 
+
+
+
+
+class QuizStatisticsView(APIView):
+    permission_classes = (permissions.IsAuthenticated,)
+    def get(self, request, quiz_id):
+        # Get the queryset of QuizUserResult
+        queryset = QuizUserResult.objects.filter(quiz_result_id=quiz_id)
+
+        # Serialize the queryset using the serializer
+        serializer = QuizUserResultSerializer(queryset, many=True)
+
+        # Retrieve the serialized data
+        serialized_data = serializer.data
+
+        # Calculate average marks
+        average_marks = queryset.aggregate(Avg('total_marks'))['total_marks__avg']
+
+        # Get top 5 scores
+        top_5_scores = queryset.order_by('-total_marks')[:5]
+
+        # Get bottom 5 scores
+        bottom_5_scores = queryset.order_by('total_marks')[:5]
+
+        # Lowest Score
+        lowest_score = queryset.aggregate(Min('total_marks'))['total_marks__min']
+
+        # Highest Score
+        highest_score = queryset.aggregate(Max('total_marks'))['total_marks__max']
+
+        context = {
+            'average_marks': average_marks,
+            'lowest_marks': lowest_score,
+            'highest_score': highest_score,
+            'top_5_scores': QuizUserResultSerializer(top_5_scores, many=True).data,
+            'bottom_5_scores': QuizUserResultSerializer(bottom_5_scores, many=True).data,
+        }
+
+        data = {'data': context, 'message': 'Quiz Statistics fetched properly'}
+        return Response({"data": data}, status=status.HTTP_200_OK) 
+
+

@@ -85,3 +85,16 @@ class QuizStudentSerializer(serializers.ModelSerializer):
         model = Quiz
         fields = '__all__'
 
+
+class StatisticsUserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['id', 'username']
+
+
+# for QuizUserResult
+class QuizUserResultSerializer(serializers.ModelSerializer):
+    user = UserSerializer(source='user_id', read_only=True)
+    class Meta:
+        model = QuizUserResult
+        fields = '__all__'

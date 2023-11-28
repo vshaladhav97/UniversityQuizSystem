@@ -18,17 +18,22 @@ class CategoryAdmin(admin.ModelAdmin):
     list_display = ('name', 'title', 'is_active', 'createdDate', 'modifiedDate')
 
 class QuizAdmin(admin.ModelAdmin):
-    list_display = ('name', 'title', 'category', 'total_mark', 'no_of_questions', 'quiz_time', 'is_active', 'createdDate', 'modifiedDate')
+    list_display = ('id','name', 'title', 'category', 'total_mark', 'no_of_questions', 'quiz_time', 'is_active', 'createdDate', 'modifiedDate')
 
 class QuizQuestionAdmin(admin.ModelAdmin):
-    list_display = ('question', 'quiz', 'quiz_type', 'is_active', 'createdDate', 'modifiedDate')
+    list_display = ('id','question', 'quiz', 'quiz_type', 'is_active', 'createdDate', 'modifiedDate')
 
 class QuizOptionsCreatorAdmin(admin.ModelAdmin):
-    list_display = ('option', 'quiz_question', 'correct_flag', 'is_active', 'createdDate', 'modifiedDate')
+    list_display = ('id', 'quiz_id', 'quiz_question','quiz_question_id', 'option', 'correct_flag', 'is_active', 'createdDate', 'modifiedDate')
 
+    def quiz_id(self, obj):
+        # Access the quiz_id using the double-underscore notation
+        return obj.quiz_question.quiz_id
+
+    quiz_id.short_description = 'Quiz ID'
 
 class QuizResultAdmin(admin.ModelAdmin):
-    list_display = ('id', 'quiz_id', 'user_id', 'quiz_option', 'own_answer', 'marks_get', 'is_attempted', 'is_ans_correct', )
+    list_display = ('id', 'quiz_id', 'user_id', 'own_answer', 'marks_get', 'question_marks', 'is_attempted', 'is_ans_correct', )
 
 class QuizUserResultAdmin(admin.ModelAdmin):
     list_display = ('id', 'quiz_result_id', 'user_id', 'total_marks', 'is_submit')
