@@ -455,7 +455,17 @@ class StudentQuizDataView(APIView):
         return Response({"data": data}, status=status.HTTP_200_OK) 
 
 
+class QuizDataView(APIView):
+    permission_classes = (permissions.IsAuthenticated,)
+    def get(self, request, category_id):
+        quizzes = Quiz.objects.filter(category = category_id)
 
+        # Serialize the quizzes using the serializer
+        serializer = OnlyQuizSerializer(quizzes, many=True)
+
+        # Return the serialized data in the response
+        data = {'data': serializer.data, 'message': 'Quizzes fetched successfully'}
+        return Response(data, status=status.HTTP_200_OK)
 
 class QuizStatisticsView(APIView):
     permission_classes = (permissions.IsAuthenticated,)

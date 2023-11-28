@@ -98,3 +98,10 @@ class QuizUserResultSerializer(serializers.ModelSerializer):
     class Meta:
         model = QuizUserResult
         fields = '__all__'
+
+# to show only quiz data
+
+class OnlyQuizSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Quiz
+        fields = '__all__'
