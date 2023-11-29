@@ -19,6 +19,7 @@ urlpatterns = [
     path('quiz_submit/', StudentQuizDataView.as_view(), name="quiz_submit"),
     path('quiz_statistics/<int:quiz_id>/', QuizStatisticsView.as_view(), name="quiz_statistics"),
     path('quiz_data/<int:category_id>/', QuizDataView.as_view(), name="quiz_data"),
-    path('quiz_users_data/<int:quiz_id>/', CurrentUserResultView.as_view(), name="quiz_users_data")
+    path('quiz_users_data/<int:quiz_id>/', CurrentUserResultView.as_view(), name="quiz_users_data"),
+    path('quiz_question_update/', QuizQuestionUpdateView.as_view(), name="quiz_question_update")
 
 ]
