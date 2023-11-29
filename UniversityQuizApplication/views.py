@@ -491,8 +491,23 @@ class StudentQuizDataView(APIView):
                 user_result.is_submit       = auto_submit
                 user_result.save()
 
+                # other users data
+                # Order QuizUserResult data by total_marks in descending order
+                quiz_user_results = QuizUserResult.objects.filter(quiz_result_id=quiz_id).order_by('-total_marks')
 
-                data = {'data': [{"user_id":user_id, "marks_get":  total_marks_user_get, "total_questions": total_questions_marks}], 'message': 'Quiz Submitted Successfully!'}
+                # Get the requested user's data
+                requested_user_data = quiz_user_results.filter(user_id=request.user.id).first()
+
+                # Serialize the data
+                serializer = QuizUserResultSerializer(quiz_user_results, many=True)
+
+                # If requested user's data is present, show it first; otherwise, display all data
+                if requested_user_data:
+                    result_data = [QuizUserResultSerializer(requested_user_data).data] + serializer.data
+                else:
+                    result_data = serializer.data
+
+                data = {'data': [{"user_id":user_id, "marks_get":  total_marks_user_get, "total_questions": total_questions_marks}], 'quiz_users_data': result_data, 'message': 'Quiz Submitted Successfully!'}
                 return Response({"data": data}, status=status.HTTP_200_OK) 
         except Exception as e:
             data = {'data': [], 'message': str(e)}
@@ -579,3 +594,26 @@ class QuizStatisticsView(APIView):
         return Response({"data": data}, status=status.HTTP_200_OK) 
 
 
+
+class CurrentUserResultView(APIView):
+    permission_classes = (permissions.IsAuthenticated,)
+    def get(self, request, quiz_id):
+        try:
+            # Order QuizUserResult data by total_marks in descending order
+            quiz_user_results = QuizUserResult.objects.filter(quiz_result_id=quiz_id).order_by('-total_marks')
+
+            # Get the requested user's data
+            requested_user_data = quiz_user_results.filter(user_id=request.user.id).first()
+
+            # Serialize the data
+            serializer = QuizUserResultSerializer(quiz_user_results, many=True)
+
+            # If requested user's data is present, show it first; otherwise, display all data
+            if requested_user_data:
+                result_data = [QuizUserResultSerializer(requested_user_data).data] + serializer.data
+            else:
+                result_data = serializer.data
+
+            return Response(result_data, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({'detail': 'An error occurred.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
