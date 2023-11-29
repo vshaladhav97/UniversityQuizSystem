@@ -407,10 +407,10 @@ class StudentQuizDataView(APIView):
                             option_correct_flag = quiz_question.correct_flag
                             correct_op_count += 1 if option_correct_flag is True else 0
                                     
-                        question_marks      = quiz_question.quiz_question.questions_marks
+                        question_marks      = quiz_question.quiz_question.questions_marks 
                         if correct_options_count != 0:
                             calculate_marks = correct_op_count / correct_options_count * int(question_marks)
-                            user_get_marks = calculate_marks
+                            user_get_marks = calculate_marks if calculate_marks else 0
                         else:
                             user_get_marks = 0 
                     else:
@@ -434,11 +434,11 @@ class StudentQuizDataView(APIView):
                 quiz_result.own_answer      = ""
                 if data['type'] == "multi_select":
                     if len(data['option_id']) > 0:
-                        quiz_result.marks_get       = user_get_marks
+                        quiz_result.marks_get       = user_get_marks if user_get_marks else 0
     
                 elif data['type'] == "multi_choice":
                     if data['option_id']:
-                        quiz_result.marks_get       = user_get_marks
+                        quiz_result.marks_get       = user_get_marks if user_get_marks else 0
                     else:
                         quiz_result.marks_get       = 0
                 quiz_result.question_marks  = question_marks if question_marks else 0
