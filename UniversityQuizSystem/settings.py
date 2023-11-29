@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     'UniversityQuizApplication',
     'rest_framework_simplejwt.token_blacklist',
     'corsheaders',
+    'django_extensions',
 ]
 
 MIDDLEWARE = [

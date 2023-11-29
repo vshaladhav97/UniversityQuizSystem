@@ -136,6 +136,7 @@ class QuizOptionsCreator(models.Model):
 # Quiz-Result Model
 class QuizResult(models.Model):
     quiz_id        = models.ForeignKey(Quiz,on_delete=models.PROTECT, related_name='quiz_quiz_result')
+    question_id = models.ForeignKey(QuizQuestion, on_delete=models.PROTECT, related_name='quiz_quest_quest')
     user_id        = models.ForeignKey(User, on_delete=models.PROTECT, related_name='quiz_user_quiz_result')
     quiz_option    = models.ManyToManyField(QuizOptionsCreator, blank=True, related_name='quiz_user_quiz_result')
     own_answer     = models.TextField(max_length=1000,null=True, blank=True)
