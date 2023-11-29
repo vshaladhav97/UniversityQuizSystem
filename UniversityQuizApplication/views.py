@@ -434,7 +434,9 @@ class StudentQuizDataView(APIView):
                 quiz_result.own_answer      = ""
                 if data['type'] == "multi_select":
                     if len(data['option_id']) > 0:
-                        quiz_result.marks_get       = user_get_marks if user_get_marks else 0
+                        quiz_result.marks_get = user_get_marks if user_get_marks else 0
+                    else:
+                        quiz_result.marks_get = 0
     
                 elif data['type'] == "multi_choice":
                     if data['option_id']:
