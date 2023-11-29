@@ -322,6 +322,28 @@ class QuizQuestionsView(APIView):
             data = {'data': [], 'message': str(e)}
             return Response({'data': data}, status=400)
     
+    @transaction.atomic
+    def delete(self, request, quest_id):
+        try:
+            quiz_question = QuizQuestion.objects.get(id=quest_id, is_active=True)
+            quiz_options = QuizOptionsCreator.objects.filter(quiz_question=quiz_question)
+
+            # Delete options
+            quiz_options.delete()
+
+            # Delete quiz question
+            quiz_question.delete()
+
+            data = {'data': [], 'message': f"Question id: {quest_id} and associated options deleted successfully!"}
+            return Response({'data': data}, status=status.HTTP_200_OK)
+
+        except QuizQuestion.DoesNotExist:
+            data = {'data': [], 'message': f"Quiz Question with id {quest_id} does not exist"}
+            return Response({'data': data}, status=status.HTTP_404_NOT_FOUND)
+
+        except Exception as e:
+            data = {'data': [], 'message': str(e)}
+            return Response({'data': data}, status=status.HTTP_400_BAD_REQUEST)
     
 class QuizQuestionUpdateView(APIView):
     def post(self, request):
