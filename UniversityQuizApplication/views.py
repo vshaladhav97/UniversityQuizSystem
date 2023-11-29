@@ -362,6 +362,11 @@ class StudentQuizDataView(APIView):
                 quiz_id = jason_data['quiz_id']
                 user_id = request.user.id
                 auto_submit = jason_data['auto_submit']
+                
+                user_submitted = QuizUserResult.objects.filter(quiz_result_id = quiz_id, user_id = user_id)
+                if user_submitted:
+                    data = {'data': [], 'message': 'User has already submitted this quiz!'}
+                    return Response({"data": data}, status=status.HTTP_200_OK) 
                 if not len(jason_data['questions'])>0:
                     data = {'data': [], 'message': 'user should submit some questions!'}
                     return Response({"data": data}, status=status.HTTP_200_OK) 
