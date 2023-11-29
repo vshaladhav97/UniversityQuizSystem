@@ -321,6 +321,56 @@ class QuizQuestionsView(APIView):
         except Exception as e:
             data = {'data': [], 'message': str(e)}
             return Response({'data': data}, status=400)
+    
+    
+class QuizQuestionUpdateView(APIView):
+    def post(self, request):
+        data = request.data
+        if not data:
+            data = {'data': [], 'message': "Missing Payload!"}
+            return Response({'data': data}, status=status.HTTP_200_OK)
+        
+        try:
+            check_quiz = Quiz.objects.filter(id=data['quiz_id'])
+            if not check_quiz:
+                data = {'data': [], 'message': f"Quiz id : {data['quiz_id']} does not exist in the Database!"}
+                return Response({'data': data}, status=409)
+
+            check_quiz_question = QuizQuestion.objects.filter(id=data['question_id'])
+            if not check_quiz_question:
+                data = {'data': [], 'message': f"Question id : {data['question_id']} does not exist in the Database!"}
+                return Response({'data': data}, status=409)
+
+            if not data['question']:
+                data = {'data': [], 'message': "Question cannot be empty!"}
+                return Response({'data': data}, status=400)
+    
+
+            if not isinstance(data['questions_marks'], int):
+                data = {'data': [], 'message': "Question marks must be an integer!"}
+                return Response({'data': data}, status=400)
+ 
+
+            if not data['quiz_type']:
+                data = {'data': [], 'message': "Quiz type cannot be empty!"}
+                return Response({'data': data}, status=400)
+    
+
+            quiz_question = QuizQuestion.objects.filter(quiz = data['quiz_id'] , id= data['question_id']).update(question = data['question'],questions_marks = data['questions_marks'], quiz_type = data['quiz_type'])
+
+            # Options data code
+            options_data = data.get('options', [])
+            
+            for i in options_data:
+                quiz_option  = QuizOptionsCreator.objects.filter(quiz_question = data['question_id'], id = i['option_id']).update(option = i['option'], correct_flag = i['correct_flag'])
+
+             # Return a success response
+            data = {'data': [{'id':  f"Question id : {data['question_id']} Quiz Questions updated successfully!"}], 'message': 'Quiz Questions updated successfully'}
+            return Response({'data': data}, status=status.HTTP_201_CREATED) 
+
+        except Exception as e:
+            data = {'data': [], 'message': str(e)}
+            return Response({'data': data}, status=400)
 
 class QuizAllDataView(APIView):
 

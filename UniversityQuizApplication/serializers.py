@@ -105,3 +105,8 @@ class OnlyQuizSerializer(serializers.ModelSerializer):
     class Meta:
         model = Quiz
         fields = '__all__'
+
+class CustomQuizUserResultSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = QuizUserResult
+        fields = '__all__'
