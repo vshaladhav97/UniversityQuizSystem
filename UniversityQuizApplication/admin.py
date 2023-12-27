@@ -33,7 +33,7 @@ class QuizOptionsCreatorAdmin(admin.ModelAdmin):
     quiz_id.short_description = 'Quiz ID'
 
 class QuizResultAdmin(admin.ModelAdmin):
-    list_display = ('id', 'quiz_id', 'user_id', 'own_answer', 'marks_get', 'question_marks', 'is_attempted', 'is_ans_correct', )
+    list_display = ('id', 'quiz_id', 'user_id', 'own_answer','question_id', 'marks_get', 'question_marks', 'is_attempted', 'is_ans_correct', )
 
 class QuizUserResultAdmin(admin.ModelAdmin):
     list_display = ('id', 'quiz_result_id', 'user_id', 'total_marks', 'is_submit')

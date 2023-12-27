@@ -14,6 +14,7 @@ from rest_framework import permissions, generics,status
 from django.db import transaction
 from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Sum, Avg, Max, Min
+import random
 
 User = get_user_model() 
 
@@ -64,8 +65,9 @@ class UserLogin(APIView):
                         },
                         status=status.HTTP_200_OK
                     )
+        data = {'result': 'Invalid credentials'}
         # If no valid user was found or the input is invalid, return an error response
-        return Response({'result': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
+        return Response({'data':data}, status=status.HTTP_401_UNAUTHORIZED)
     
 # Logout class
 class LogoutView(APIView):
@@ -414,17 +416,17 @@ class StudentQuizDataView(APIView):
     permission_classes = (permissions.IsAuthenticated,)
     def get(self,request, quiz_id):
         try:
-            quiz_questions = Quiz.objects.filter(id=quiz_id,is_active=True)
+            quiz_questions = Quiz.objects.filter(id=quiz_id, is_active=True).order_by('?')[:5]
             serializer = QuizStudentSerializer(quiz_questions, many=True)
             if quiz_questions:
-                data = {'data': serializer.data, 'message': 'Quiz Fetched Successfully!'}
+                data = {'data': serializer.data, 'message': 'Random 5 Quiz Questions Fetched Successfully!'}
                 return Response({"data": data}, status=status.HTTP_200_OK)
             else:
                 data = {'data': [], 'message': 'Quiz Not Found!'}
                 return Response({"data": data}, status=status.HTTP_200_OK)
         except Exception as e:
             data = {'data': [], 'message': str(e)}
-            return Response({'data':data}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'data': data}, status=status.HTTP_400_BAD_REQUEST)
     
     @transaction.atomic
     def post(self, request):
@@ -560,7 +562,7 @@ class StudentQuizDataView(APIView):
                 user_result.quiz_result_id  = Quiz.objects.get(id = quiz_id)
                 user_result.user_id         = User.objects.get(id = user_id)
                 user_result.total_marks     = total_marks_user_get
-                user_result.is_submit       = auto_submit
+                user_result.is_submit       = True if auto_submit is False else False
                 user_result.save()
 
                 # other users data
@@ -602,7 +604,7 @@ class QuizStatisticsView(APIView):
     permission_classes = (permissions.IsAuthenticated,)
     def get(self, request, quiz_id):
 
-        # import matplotlib.pyplot as plt
+        import matplotlib.pyplot as plt
 
         # Pie chart data
 
@@ -629,23 +631,121 @@ class QuizStatisticsView(APIView):
 
         # Highest Score
         highest_score = queryset.aggregate(Max('total_marks'))['total_marks__max']
+        
 
-        labels = ['Lowest Score', 'Average Score', 'Highest Score']
-        sizes = [lowest_score, average_marks, highest_score]
-        explode = (0.1, 0, 0)  # explode the slice with the lowest score
-        colors = ['#ff9999', '#66b3ff', '#99ff99']
+        quiz_user_results = QuizUserResult.objects.filter(quiz_result_id=quiz_id).order_by('-total_marks')
 
-        # # Create the pie chart
-        # fig, ax = plt.subplots()
-        # ax.pie(sizes, explode=explode, labels=labels, colors=colors, autopct='%1.1f%%',
-        #     shadow=True, startangle=90)
-        # ax.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle
-        # plt.title('Distribution of Scores')
-        # plt.show()
+        # Extract usernames and marks for all users
+        all_usernames = list(quiz_user_results.values_list('user_id__username', flat=True))
+        all_marks = list(quiz_user_results.values_list('total_marks', flat=True))
+
+        # # Extract usernames and marks for all users
+        # all_usernames = list(quiz_user_results.values_list('user_id__username', flat=True))
+        # all_marks = list(quiz_user_results.values_list('total_marks', flat=True))
+
+        # Calculate explode_pie
+        max_score_index = all_marks.index(max(all_marks))
+        explode_pie = [0.1 if i == max_score_index else 0 for i in range(len(all_usernames))]
+
+        # Create the pie chart
+        fig, ax1 = plt.subplots()
+        ax1.pie(all_marks, explode=explode_pie, labels=all_usernames, autopct='%1.1f%%',
+                shadow=True, startangle=90, colors=['#ff9999', '#66b3ff', '#99ff99'])
+        ax1.axis('equal')  # Equal aspect ratio ensures that the pie is drawn as a circle
+        plt.title('Distribution of Scores')
+
+        # Create the bar chart
+        ax2 = ax1.twinx()  # Create a second y-axis for the bar chart
+        bar_chart = ax2.bar(all_usernames, all_marks, color='#ffcc99', alpha=0.5)
+        ax2.set_ylabel('Scores', color='#ffcc99')
+        ax2.tick_params('y', colors='#ffcc99')
+
+        # Rotate the usernames on the x-axis for better visibility
+        plt.xticks(rotation=45, ha='right')
+
+        # Attach usernames to the bars
+        for bar, username in zip(bar_chart, all_usernames):
+            yval = bar.get_height()
+            plt.text(bar.get_x() + bar.get_width() / 2, yval, username, ha='center', va='bottom')
+
+        plt.show()
 
 
-        # categories = ['Lowest Score', 'Average Score', 'Highest Score']
-        # scores = [lowest_score, average_marks, highest_score]
+
+        # # Check if the list is not empty before finding the maximum score
+        # if all_marks:
+        #     # Find the index of the maximum score
+        #     max_score_index = all_marks.index(max(all_marks))
+
+        #     # Set explode values: 0.1 for the slice with the highest score, 0 for others
+        #     explode = [0.1 if i == max_score_index else 0 for i in range(len(all_usernames))]
+
+        #     labels = all_usernames
+        #     sizes = all_marks
+        #     colors = ['#ff9999', '#66b3ff', '#99ff99']
+
+        #     # Create the pie chart
+        #     fig, ax = plt.subplots()
+        #     ax.pie(sizes, explode=explode, labels=labels, colors=colors, autopct='%1.1f%%',
+        #         shadow=True, startangle=90)
+        #     ax.axis('equal')  # Equal aspect ratio ensures that the pie is drawn as a circle
+        #     plt.title('Distribution of Scores')
+        #     plt.show()
+        # else:
+        #     print("No data available to display.")
+
+
+        # # Check if the list is not empty before proceeding
+        # if all_usernames and all_marks:
+        #     # Find the index of the maximum score
+        #     max_score_index = all_marks.index(max(all_marks))
+
+        #     # Set explode values for the pie chart: 0.1 for the slice with the highest score, 0 for others
+        #     explode_pie = [0.1 if i == max_score_index else 0 for i in range(len(all_usernames))]
+
+        #     # Create the pie chart
+        #     fig, ax1 = plt.subplots()
+        #     ax1.pie(all_marks, explode=explode_pie, labels=all_usernames, autopct='%1.1f%%',
+        #             shadow=True, startangle=90, colors=['#ff9999', '#66b3ff', '#99ff99'])
+        #     ax1.axis('equal')  # Equal aspect ratio ensures that the pie is drawn as a circle
+        #     plt.title('Distribution of Scores')
+
+        #     # Create the bar chart
+        #     ax2 = ax1.twinx()  # Create a second y-axis for the bar chart
+        #     ax2.bar(all_usernames, all_marks, color='#ffcc99', alpha=0.5)
+        #     ax2.set_ylabel('Scores', color='#ffcc99')
+        #     ax2.tick_params('y', colors='#ffcc99')
+
+        #     plt.show()
+        # else:
+        #     print("No data available to display.")
+
+
+
+        # # Check if the list is not empty before finding the maximum score
+        # if all_marks:
+        #     # Find the index of the maximum score
+        #     max_score_index = all_marks.index(max(all_marks))
+
+        #     # Set explode values: 0.1 for the slice with the highest score, 0 for others
+        #     explode = [0.1 if i == max_score_index else 0 for i in range(len(all_usernames))]
+
+        #     labels = ['lowest_score', average_marks, highest_score]
+        #     sizes = [lowest_score, average_marks, highest_score]
+        #     colors = ['#ff9999', '#66b3ff', '#99ff99']
+
+        #     # Create the pie chart
+        #     fig, ax = plt.subplots()
+        #     ax.pie(sizes, explode=explode, labels=labels, colors=colors, autopct='%1.1f%%',
+        #         shadow=True, startangle=90)
+        #     ax.axis('equal')  # Equal aspect ratio ensures that the pie is drawn as a circle
+        #     plt.title('Distribution of Scores')
+        #     plt.show()
+        # else:
+        #     print("No data available to display.")
+
+        # categories = all_usernames
+        # scores = all_marks
 
         # # Create the bar chart
         # plt.bar(categories, scores, color=['red', 'blue', 'green'])

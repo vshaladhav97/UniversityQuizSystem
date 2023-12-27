@@ -38,7 +38,8 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     def __str__(self):
         return self.email
-    
+
+# User Profile
 class UserProfile(models.Model):
     GENDER_CHOICES      = (('M', 'M'),('F', 'F'),('O','O'))
     user                = models.ForeignKey(User, on_delete=models.CASCADE)
